@@ -1,0 +1,11 @@
+services:
+  uc-solar-clock:
+    build: .
+    container_name: uc-analog-clock
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=Europe/Madrid
+      - UC_CONFIG_HOME=/app/config
+    volumes:
+      - ./config:/app/config

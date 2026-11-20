@@ -1,0 +1,140 @@
+{
+  "driver_id": "uc_intg_analog_clock",
+  "version": "1.1.0",
+  "min_core_api": "0.20.0",
+  "name": {
+    "en": "Solar & Lunar Analog Clock"
+  },
+  "icon": "uc:clock",
+  "description": {
+    "en": "Astronomical watch face with real-time seasonal twilight sky, solar/lunar orbit, weather, and event countdown."
+  },
+  "developer": {
+    "name": "riccardlinde"
+  },
+  "home_page": "https://github.com",
+  "release_date": "2026-11-21",
+  "setup_data_schema": {
+    "title": {
+      "en": "Solar & Lunar Clock Setup"
+    },
+    "settings": [
+      {
+        "id": "latitude",
+        "label": {
+          "en": "Latitude (e.g. 41.39)"
+        },
+        "field": {
+          "text": {
+            "value": "41.39"
+          }
+        }
+      },
+      {
+        "id": "longitude",
+        "label": {
+          "en": "Longitude (e.g. 2.16)"
+        },
+        "field": {
+          "text": {
+            "value": "2.16"
+          }
+        }
+      },
+      {
+        "id": "time_format",
+        "label": {
+          "en": "Center Hour Format"
+        },
+        "field": {
+          "dropdown": {
+            "value": "24h",
+            "items": [
+              {
+                "id": "24h",
+                "label": {
+                  "en": "24-Hour (0-23)"
+                }
+              },
+              {
+                "id": "12h",
+                "label": {
+                  "en": "12-Hour (1-12)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "temp_unit",
+        "label": {
+          "en": "Temperature Unit"
+        },
+        "field": {
+          "dropdown": {
+            "value": "C",
+            "items": [
+              {
+                "id": "C",
+                "label": {
+                  "en": "Celsius (\u00b0C)"
+                }
+              },
+              {
+                "id": "F",
+                "label": {
+                  "en": "Fahrenheit (\u00b0F)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "show_moon",
+        "label": {
+          "en": "Show Moon & Lunar Phase"
+        },
+        "field": {
+          "checkbox": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": "show_temp",
+        "label": {
+          "en": "Show Temperature Inside Sun"
+        },
+        "field": {
+          "checkbox": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": "show_sun_events",
+        "label": {
+          "en": "Show Sunrise/Sunset & Countdown"
+        },
+        "field": {
+          "checkbox": {
+            "value": true
+          }
+        }
+      },
+      {
+        "id": "show_date",
+        "label": {
+          "en": "Show Date & Weekday"
+        },
+        "field": {
+          "checkbox": {
+            "value": true
+          }
+        }
+      }
+    ]
+  }
+}

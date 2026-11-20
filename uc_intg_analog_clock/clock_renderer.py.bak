@@ -1,0 +1,150 @@
+import base64,io,json,math,random,ssl,time,urllib.request
+from datetime import datetime
+from PIL import Image,ImageDraw,ImageFont,ImageFilter
+_wc={"ts":0,"t":"","sr":7.75,"ss":17.5,"wmo":0}
+def _solar():
+ if time.time()-_wc["ts"]<900 and _wc["t"]:return _wc
+ try:
+  u="https://open-meteo.com"
+  req=urllib.request.Request(u,headers={"User-Agent":"Mozilla/5.0"})
+  d=json.loads(urllib.request.urlopen(req,timeout=8,context=ssl._create_unverified_context()).read().decode())
+  cw=d["current_weather"];dl=d["daily"]
+  sr=datetime.fromisoformat(dl["sunrise"]);ss=datetime.fromisoformat(dl["sunset"])
+  _wc["sr"]=sr.hour+sr.minute/60.0;_wc["ss"]=ss.hour+ss.minute/60.0;_wc["wmo"]=int(cw.get("weathercode",0))
+  _wc["t"],_wc["ts"]="  •  "+str(round(cw.get("temperature",0)))+"°C",time.time()
+ except Exception:pass
+ return _wc
+def _f(sz):
+ for p in("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf","/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"):
+  try:return ImageFont.truetype(p,sz)
+  except Exception:pass
+ return ImageFont.load_default()
+def _sun_glow(rad):
+ sz=rad*2;g=Image.new("RGBA",(sz,sz),(0,0,0,0));px=g.load()
+ for y in range(sz):
+  for x in range(sz):
+   d=math.hypot(x-rad,y-rad)/float(rad)
+   if d<1.0:
+    a=int(225*((1.0-d)**2.3));px[x,y]=(255,250,230,a)
+ return g
+_SG=_sun_glow(54)
+def render_analog_clock_base64(now,theme="dark",show_date=True,size=360):
+ w,h,wh=360,360,360;sc=_solar()
+ _scn=((7.75,7.75,17.5,0,0.14),(13.25,6.25,21.5,0,0.50),(15.65,7.0,19.5,3,0.25),(17.55,7.75,17.5,0,0.72),(0.50,7.75,17.5,61,0.03))[int(time.time()/6)%5]
+ hr,sr,ss,wmo,_dph=_scn
+ cy=wh//2;cx=w//2;orb_r=128;sa=math.radians(hr*15+90);sx,sy=cx+orb_r*math.cos(sa),cy+orb_r*math.sin(sa)
+ day_f=max(0.0,min(1.0,math.sin(math.pi*(hr-sr)/(ss-sr)))) if sr<=hr<=ss else 0.0
+ twi=max(0.0,1.0-min(abs(hr-sr),abs(hr-ss))/1.5)
+ is_rain=wmo>=51;is_cloud=wmo in(2,3,45,48) or is_rain
+ img=Image.new("RGB",(w,h),(10,16,38));px=img.load()
+ sr_ang=(sr*15.0+90.0)%360.0;ss_ang=(ss*15.0+90.0)%360.0
+ day_span=(ss_ang-sr_ang)%360.0
+ for y in range(wh):
+  for x in range(w):
+   ang=(math.degrees(math.atan2(y-cy,x-cx)))%360.0
+   rel=(ang-sr_ang)%360.0
+   dist_edge=min(rel,day_span-rel) if rel<=day_span else -min((sr_ang-ang)%360.0,(ang-ss_ang)%360.0)
+   sp=max(0.0,1.0-math.hypot(x-sx,y-sy)/225.0)*max(day_f,twi*0.7)
+   if dist_edge>=0:
+    edge_f=math.exp(-dist_edge/28.0)
+    zen_f=1.0-edge_f
+    b_boost=0.35+0.65*max(day_f,twi*0.55)
+    if is_rain:
+     r=int((32+48*edge_f)*b_boost+55*twi*edge_f)
+     g=int((44+62*edge_f)*b_boost+35*twi*edge_f)
+     b=int((72+88*edge_f)*b_boost+22*twi*edge_f)
+    else:
+     r=int((58*zen_f+188*edge_f)*b_boost+185*twi*edge_f+75*sp)
+     g=int((132*zen_f+222*edge_f)*b_boost+115*twi*edge_f+70*sp)
+     b=int((232*zen_f+252*edge_f)*b_boost+35*twi*edge_f+45*sp)
+    px[x,y]=(min(255,r),min(255,g),min(255,b))
+   else:
+    d_out=-dist_edge
+    band=0.75 if d_out<12 else (0.42 if d_out<24 else (0.18 if d_out<36 else 0.0))
+    r=int(10+22*band+28*twi*band)
+    g=int(18+36*band+20*twi*band)
+    b=int(44+62*band+32*twi*band)
+    px[x,y]=(min(255,r),min(255,g),min(255,b))
+ if is_cloud:
+  cl=Image.new("RGBA",(w,wh),(0,0,0,0));cd=ImageDraw.Draw(cl)
+  if is_rain:
+   for y2 in range(0,115):
+    a=int(185*((1.0-y2/115.0)**1.6))
+    cd.line([(0,y2),(w,y2)],fill=(36,44,62,a))
+   for cx2,cy2,rw,rh in((75,4,85,34),(175,-4,98,38),(275,6,85,34),(125,22,70,24),(225,20,74,24)):
+    cd.ellipse([cx2-rw,cy2-rh,cx2+rw,cy2+rh],fill=(58,68,88,165))
+   cl=cl.filter(ImageFilter.GaussianBlur(11))
+   rl=Image.new("RGBA",(w,wh),(0,0,0,0));rd=ImageDraw.Draw(rl)
+   rng=random.Random(int(hr*10));ra=int(55+35*day_f)
+   for _ in range(42):
+    rx2=rng.randint(28,w-28);ry2=rng.randint(28,cy-14)
+    rd.line([(rx2,ry2),(rx2-4,ry2+15)],fill=(195,220,250,ra),width=1)
+   img.paste(cl,(0,0),cl);img.paste(rl,(0,0),rl)
+  else:
+   puffs=[(85,6,56,28),(132,-4,52,32),(182,4,60,28),(235,-2,54,30),(282,8,52,26),(155,18,46,20),(212,16,48,20)]
+   for cx2,cy2,rw,rh in puffs:
+    cd.ellipse([cx2-rw,cy2-rh+6,cx2+rw,cy2+rh+6],fill=(160,185,220,int(75+65*day_f)))
+    cd.ellipse([cx2-rw,cy2-rh,cx2+rw,cy2+rh],fill=(255,255,255,int(115+100*day_f)))
+   cl=cl.filter(ImageFilter.GaussianBlur(10));img.paste(cl,(0,0),cl)
+ d=ImageDraw.Draw(img)
+ if day_f<0.22 and not is_cloud:
+  for sx2,sy2 in((46,40),(92,28),(278,36),(314,58),(64,252),(112,278),(266,258),(304,232),(222,34),(135,268)):
+   d.ellipse([sx2-1,sy2-1,sx2+1,sy2+1],fill=(210,224,248))
+ rx,ry=cx-10,cy+2
+ def rp(a,ins=0):
+  ca,sa=math.cos(a),math.sin(a);t=min((rx-ins)/abs(ca) if abs(ca)>1e-6 else 1e9,(ry-ins)/abs(sa) if abs(sa)>1e-6 else 1e9);return cx+t*ca,cy+t*sa
+ for i in range(60):
+  a=math.radians(i*6-90);d.line([rp(a,0),rp(a,14 if i%5==0 else 8)],fill=(255,255,255) if i%5==0 else (235,240,248),width=3 if i%5==0 else 2)
+ d.ellipse([cx-orb_r,cy-orb_r,cx+orb_r,cy+orb_r],outline=(205,225,250) if day_f>0.2 else (95,115,145),width=2)
+ def draw_arc_txt(txt,ang_deg,rad_t,flip=False,bright=True):
+  af=_f(15);step=6.2;tot=step*(len(txt)-1);s_ang=ang_deg+(tot/2 if flip else -tot/2)
+  col=(255,255,255,250) if bright else (175,190,215,145)
+  for idx,ch in enumerate(txt):
+   a_deg=s_ang+(-idx*step if flip else idx*step);a_rad=math.radians(a_deg)
+   tx,ty=cx+rad_t*math.cos(a_rad),cy+rad_t*math.sin(a_rad)
+   ci=Image.new("RGBA",(28,28),(0,0,0,0));cd=ImageDraw.Draw(ci);cd.text((14,14),ch,fill=col,font=af,anchor="mm")
+   rot=ci.rotate(-(a_deg-90) if flip else -(a_deg+90),resample=Image.BICUBIC)
+   img.paste(rot,(int(tx-14),int(ty-14)),rot)
+ sr_h,sr_m=int(sr),int(round((sr%1)*60));ss_h,ss_m=int(ss),int(round((ss%1)*60));sa_deg=hr*15+90;bot_half=0<(sa_deg%360)<180
+ is_day=sr<=hr<ss;a_sr,a_ss=sa_deg-30,sa_deg+30
+ draw_arc_txt(f"{sr_h:02d}:{sr_m:02d}",a_sr,orb_r-14,flip=bot_half,bright=not is_day)
+ draw_arc_txt(f"{ss_h:02d}:{ss_m:02d}",a_ss,orb_r-14,flip=bot_half,bright=is_day)
+ gf_big=_f(142);nl=Image.new("RGBA",(w,wh),(0,0,0,0));nd=ImageDraw.Draw(nl)
+ nd.text((26,48),"1",fill=(255,255,255,255),font=gf_big,anchor="mm");nd.text((74,48),"0",fill=(255,255,255,255),font=gf_big,anchor="mm")
+ for num,nx,ny in(("2",w-44,48),("4",w-26,wh-38),("8",36,wh-38)):
+  nd.text((nx,ny),num,fill=(255,255,255,255),font=gf_big,anchor="mm")
+ mk=Image.new("L",(w,wh),255);md2=ImageDraw.Draw(mk);md2.ellipse([cx-162,cy-162,cx+162,cy+162],fill=0)
+ nl.putalpha(Image.composite(nl.getchannel("A"),Image.new("L",(w,wh),0),mk))
+ img.paste(_SG,(int(sx-54),int(sy-54)),_SG);img.paste(nl,(0,0),nl);d=ImageDraw.Draw(img)
+ ph=_dph;ma2=sa-ph*2*math.pi;mx2,my2=cx+orb_r*math.cos(ma2),cy+orb_r*math.sin(ma2)
+ mr_orb=84 if math.hypot(sx-mx2,sy-my2)<42 else orb_r;mx2,my2=cx+mr_orb*math.cos(ma2),cy+mr_orb*math.sin(ma2)
+ ml=Image.new("RGBA",(36,36),(0,0,0,0));mpx=ml.load();mr=14
+ for yy in range(36):
+  for xx in range(36):
+   dx,dy=xx-18,yy-18
+   if dx*dx+dy*dy<=mr*mr:
+    xm=math.sqrt(max(0,mr*mr-dy*dy));lit=(dx>=-xm*math.cos(ph*2*math.pi)) if ph<0.5 else (dx<=xm*math.cos((1.0-ph)*2*math.pi))
+    mpx[xx,yy]=(230,238,255,245) if lit else (38,48,68,190)
+ img.paste(ml,(int(mx2-18),int(my2-18)),ml);d=ImageDraw.Draw(img)
+ d.ellipse([mx2-14,my2-14,mx2+14,my2+14],outline=(175,195,230),width=1)
+ d.ellipse([sx-20,sy-20,sx+20,sy+20],fill=(255,252,238),outline=(255,215,130),width=2)
+ ha,ma=math.radians((now.hour%12+now.minute/60.0)*30-90),math.radians(now.minute*6-90)
+ srx,sry=cx+(orb_r-14)*math.cos(math.radians(a_sr)),cy+(orb_r-14)*math.sin(math.radians(a_sr))
+ ssx,ssy=cx+(orb_r-14)*math.cos(math.radians(a_ss)),cy+(orb_r-14)*math.sin(math.radians(a_ss))
+ def best_r(ang,r_max,r_min,obs):
+  for r in range(r_max,r_min-1,-2):
+   px2,py2=cx+r*math.cos(ang),cy+r*math.sin(ang)
+   if all(math.hypot(px2-ox,py2-oy)>=od for ox,oy,od in obs):return r
+  return r_min
+ m_rad=best_r(ma,orb_r,72,[(sx,sy,42),(mx2,my2,36),(srx,sry,34),(ssx,ssy,34)])
+ mtx,mty=cx+m_rad*math.cos(ma),cy+m_rad*math.sin(ma)
+ h_rad=best_r(ha,orb_r,56,[(sx,sy,42),(mx2,my2,36),(srx,sry,34),(ssx,ssy,34),(mtx,mty,38)])
+ htx,hty=cx+h_rad*math.cos(ha),cy+h_rad*math.sin(ha)
+ d.line([(cx,cy),(htx,hty)],fill=(165,135,62),width=4);d.line([(cx,cy),(mtx,mty)],fill=(145,155,172),width=3)
+ d.ellipse([cx-4,cy-4,cx+4,cy+4],fill=(145,155,172));d.ellipse([cx-2,cy-2,cx+2,cy+2],fill=(20,28,42))
+ tf=_f(16);hstr=str(now.hour%12 or 12);mstr=now.strftime("%M")
+ d.ellipse([htx-16,hty-16,htx+16,hty+16],fill=(14,20,32),outline=(255,212,95),width=2)
+ d.text((htx,hty),hstr,fill=(255,212,95),font=tf,anchor="mm")
+ d.ellipse([mtx-16,mty-16,mtx+16,mty+16],fill=(14,20,32),outline=(245,248,255),width=2)
+ d.text((mtx,mty),mstr,fill=(245,248,255),font=tf,anchor="mm")
+ buf=io.BytesIO();img.save(buf,format="JPEG",quality=92);return "data:image/jpeg;base64,"+base64.b64encode(buf.getvalue()).decode("ascii")
