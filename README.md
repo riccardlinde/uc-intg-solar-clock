@@ -37,7 +37,7 @@ Configure during setup or via **Web Configurator -> Integrations -> Reconfigure*
 
 ### Option A: Docker Compose (Recommended)
 ```bash
-git clone https://://github.com.git
+git clone https://github.com/riccardlinde/uc-intg-solar-clock.git
 cd uc-intg-solar-clock
 docker compose up -d --build
 ```
