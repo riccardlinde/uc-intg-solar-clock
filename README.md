@@ -2,13 +2,17 @@
 
 An astronomical watch face integration for **Unfolded Circle Remote Two & Remote 3** rendering a real-time `360x360` dynamic sky dial with seasonal twilight gradients, an orbiting 24-hour Sun and true-phase Moon, live Open-Meteo weather (no API key required), and automatic text collision avoidance.
 
-## Important: Use as a Media Player Widget
+## How to Display on Your Remote (Step-by-Step)
 **Use this integration as a Media Player Widget inside an Activity for accurate representation and full display of the clock.**
 
-- **Activity Media Player Widget (Recommended):** Displays the complete, uncropped `360x360` dial edge-to-edge.
-- **Tip for Multi-Activity Setups:** Create your Clock Activity inside its own separate **Activity Group** (e.g., `Clock` or `Ambient`) with an empty On/Off sequence so launching the clock never powers off your TV, AVR, or other running activities.
-- **Custom Activity Icon:** You can upload `docs/clear_day.png` as your Activity's custom icon in the Web Configurator so your page button shows a miniature preview of the watch face.
-- **Note on Direct Page Entities:** Adding the entity directly onto a standard page grid forces Unfolded Circle's compact tile layout (which crops/shrinks the square dial with large borders). Because Remote 2/3 shares a single image stream across both views, the artwork is calibrated specifically for the full **Media Player Widget**.
+1. **Configure the Entity:** After adding the integration, open **Integrations -> Solar & Lunar Analog Clock** and add **Solar & Lunar Clock** to your **Configured Entities**.
+2. **Create a Separate Activity Group:** Go to **Activities** and create a dedicated group (e.g., `Clock` or `Ambient`). Putting the clock in its own group ensures launching it will **never** power off your TV, AVR, or other running activities.
+3. **Create the Clock Activity:** Click **Create Activity** inside that group, name it `Solar Clock`, add **Solar & Lunar Clock** under **Included Entities**, and leave the **On / Off sequences** empty.
+4. **Add the Full-Screen Media Player Widget:** Open the Activity's **User Interface** tab, add a **Media Player** widget, select **Solar & Lunar Clock**, and resize it to fill the screen.
+5. **Set a Custom Activity Icon (Optional):** In the Activity settings, choose **Icon -> Custom** and upload `docs/clear_day.png` from this repo so your page button shows a miniature preview of the watch face.
+6. **Add to a Page:** Go to **Pages**, edit your desired page, and add your new **Solar Clock** Activity (or Activity Group) to the grid.
+
+> **Note on Direct Page Entities:** Placing the entity directly onto a standard page grid forces Unfolded Circle's compact tile layout, which crops/shrinks the square dial with large borders. Because Remote 2/3 shares a single image stream across both views, the artwork is calibrated specifically for the **Activity Media Player Widget**.
 
 ## Screenshots
 
