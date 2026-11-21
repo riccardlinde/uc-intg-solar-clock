@@ -20,24 +20,13 @@
     },
     "settings": [
       {
-        "id": "latitude",
+        "id": "location",
         "label": {
-          "en": "Latitude (e.g. 41.39)"
+          "en": "City, Town, or Lat, Lon (e.g. Barcelona)"
         },
         "field": {
           "text": {
-            "value": "41.39"
-          }
-        }
-      },
-      {
-        "id": "longitude",
-        "label": {
-          "en": "Longitude (e.g. 2.16)"
-        },
-        "field": {
-          "text": {
-            "value": "2.16"
+            "value": "Barcelona"
           }
         }
       },
