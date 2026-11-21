@@ -11,15 +11,17 @@ CONFIG_DIR=os.getenv("UC_CONFIG_HOME",".");CONFIG_FILE=os.path.join(CONFIG_DIR,"
 config={"location":"Barcelona","latitude":41.39,"longitude":2.16,"timezone":"Europe/Madrid","time_format":"24h","temp_unit":"C","show_moon":True,"show_temp":True,"show_sun_events":True,"show_date":True}
 clock_task=None
 def _b(v,d=True):return v if isinstance(v,bool) else (v.lower() in("true","1","yes","on") if isinstance(v,str) else d)
+BUILTIN={"barcelona":(41.39,2.16,"Europe/Madrid"),"madrid":(40.42,-3.70,"Europe/Madrid"),"london":(51.51,-0.13,"Europe/London"),"paris":(48.86,2.35,"Europe/Paris"),"berlin":(52.52,13.40,"Europe/Berlin"),"amsterdam":(52.37,4.90,"Europe/Amsterdam"),"rome":(41.90,12.50,"Europe/Rome"),"lisbon":(38.72,-9.14,"Europe/Lisbon"),"zurich":(47.38,8.54,"Europe/Zurich"),"vienna":(48.21,16.37,"Europe/Vienna"),"copenhagen":(55.68,12.57,"Europe/Copenhagen"),"stockholm":(59.33,18.07,"Europe/Stockholm"),"oslo":(59.91,10.75,"Europe/Oslo"),"dublin":(53.35,-6.26,"Europe/Dublin"),"new york":(40.71,-74.01,"America/New_York"),"los angeles":(34.05,-118.24,"America/Los_Angeles"),"chicago":(41.88,-87.63,"America/Chicago"),"toronto":(43.65,-79.38,"America/Toronto"),"tokyo":(35.68,139.65,"Asia/Tokyo"),"sydney":(-33.87,151.21,"Australia/Sydney"),"singapore":(1.35,103.82,"Asia/Singapore"),"dubai":(25.20,55.27,"Asia/Dubai")}
 def _geocode(q):
  q=(q or "").strip()
  if not q:return
+ if q.lower() in BUILTIN:config["latitude"],config["longitude"],config["timezone"]=BUILTIN[q.lower()];return
  if "," in q:
   pts=q.split(",",1)
   try:config["latitude"],config["longitude"]=float(pts.strip()),float(pts.strip());return
   except Exception:pass
  try:
-  url="https://open-meteo.com"+urllib.parse.quote(q)+"&count=1&language=en&format=json"
+  url="https://"+"geocoding-api"+"://"+urllib.parse.quote(q)+"&count=1&language=en&format=json"
   req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0"})
   res=json.loads(urllib.request.urlopen(req,timeout=8,context=ssl._create_unverified_context()).read().decode()).get("results")
   if res:config["latitude"],config["longitude"],config["timezone"]=res["latitude"],res["longitude"],res.get("timezone",config.get("timezone","Europe/Madrid"))
