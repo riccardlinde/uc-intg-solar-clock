@@ -3,7 +3,7 @@ import asyncio,json,logging,os
 from datetime import datetime
 import ucapi
 from ucapi import media_player
-from uc_intg_analog_clock.clock_renderer import render_analog_clock_base64,_solar
+from uc_intg_analog_clock.clock_renderer import render_analog_clock_base64
 logging.basicConfig(level=logging.INFO)
 loop=asyncio.new_event_loop();asyncio.set_event_loop(loop);api=ucapi.IntegrationAPI(loop)
 CONFIG_DIR=os.getenv("UC_CONFIG_HOME",".");CONFIG_FILE=os.path.join(CONFIG_DIR,"config.json");ENTITY_ID="analog_clock_main"
@@ -13,8 +13,7 @@ def _b(v,d=True):return v if isinstance(v,bool) else (v.lower() in("true","1","y
 def get_attrs():
  now=datetime.now();lat=float(config.get("latitude",41.39));lon=float(config.get("longitude",2.16));unit=config.get("temp_unit","C");tfmt=config.get("time_format","24h")
  uri=render_analog_clock_base64(now,show_date=_b(config.get("show_date",True)),time_format=tfmt,temp_unit=unit,show_moon=_b(config.get("show_moon",True)),show_temp=_b(config.get("show_temp",True)),show_sun_events=_b(config.get("show_sun_events",True)),latitude=lat,longitude=lon)
- sc=_solar(lat,lon,unit);td=now.strftime("%H:%M") if tfmt=="24h" else now.strftime("%I:%M %p").lstrip("0");hr=now.hour+now.minute/60.0;iday=(sc["sr"]<=hr<sc["ss"]);ehr=sc["ss"] if iday else sc["sr"];elbl="Sunset" if iday else "Sunrise";estr=f"{int(ehr):02d}:{int(round((ehr%1)*60)):02d}"
- return {media_player.Attributes.STATE:media_player.States.ON,media_player.Attributes.MEDIA_TITLE:f"{td}  ·  {now.strftime('%A %d')}",media_player.Attributes.MEDIA_ARTIST:f"{sc.get('temp','')}°{unit}  ·  {elbl} {estr}",media_player.Attributes.MEDIA_IMAGE_URL:uri}
+ return {media_player.Attributes.STATE:media_player.States.ON,media_player.Attributes.MEDIA_TITLE:"",media_player.Attributes.MEDIA_ARTIST:"",media_player.Attributes.MEDIA_IMAGE_URL:uri}
 def load_config():
  if os.path.exists(CONFIG_FILE):
   try:
@@ -46,15 +45,15 @@ async def on_exit_standby():
  await push_clock_update()
  if clock_task is None or clock_task.done():clock_task=loop.create_task(clock_loop())
 @api.listens_to(ucapi.Events.SUBSCRIBE_ENTITIES)
-async def on_sub(eids):
+async def on_sub(entity_ids):
  global clock_task
- if ENTITY_ID in eids:
+ if ENTITY_ID in entity_ids:
   await push_clock_update()
   if clock_task is None or clock_task.done():clock_task=loop.create_task(clock_loop())
 @api.listens_to(ucapi.Events.UNSUBSCRIBE_ENTITIES)
-async def on_unsub(eids):
+async def on_unsub(entity_ids):
  global clock_task
- if ENTITY_ID in eids and clock_task and not clock_task.done():clock_task.cancel();clock_task=None
+ if ENTITY_ID in entity_ids and clock_task and not clock_task.done():clock_task.cancel();clock_task=None
 async def setup_handler(msg):
  if isinstance(msg,ucapi.DriverSetupRequest):
   sd=msg.setup_data
